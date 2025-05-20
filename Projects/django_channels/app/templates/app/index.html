@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background-color: #ccc;
+    }
+    .status-indicator.connected {
+      background-color: #4CAF50;
+    }
+    .status-indicator.disconnected {
+      background-color: #f44336;
+    }
+    .status-text {
+      display: inline-block;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+    }
+    #messages {
+      height: 350px;
+      overflow-y: auto;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 4px;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 18px;
+      max-width: 80%;
+      word-break: break-word;
+      position: relative;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .sent {
+      background-color: #e3f2fd;
+      color: #0d47a1;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+    .received {
+      background-color: #e8f5e9;
+      color: #1b5e20;
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+    .system {
+      background-color: #f5f5f5;
+      color: #616161;
+      text-align: center;
+      margin: 10px auto;
+      font-style: italic;
+      font-size: 0.9em;
+      padding: 5px 15px;
+    }
+    .timestamp {
+      font-size: 0.7em;
+      color: #9e9e9e;
+      margin-top: 4px;
+      text-align: right;
+    }
+    .data-size {
+      font-size: 0.7em;
+      color: #9e9e9e;
+      margin-top: 2px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+    #messageInput {
+      flex-grow: 1;
+      padding: 10px 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    #messageInput:focus {
+      outline: none;
+      border-color: #2196F3;
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #1976D2;
+    }
+    button:disabled {
+      background-color: #bdbdbd;
+      cursor: not-allowed;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .count {
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+      color: white;
+    }
+    .count.sent {
+      background-color: #0d47a1;
+    }
+    .count.received {
+      background-color: #1b5e20;
+    }
+    .protocol {
+      font-size: 14px;
+      color: #757575;
+    }
+    .clear-btn {
+      background-color: #f44336;
+      margin-left: 5px;
+    }
+    .clear-btn:hover {
+      background-color: #d32f2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebSocket Test</h1>
+  
+  <div class="container">
+    <div class="panel">
+      <div>
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span class="status-text" id="connectionStatus">Disconnected</span>
+        <span class="protocol" id="protocolInfo"></span>
+      </div>
+      
+      <div id="messages"></div>
+      
+      <div class="stats">
+        <div>
+          <span class="count sent" id="sentCount">Sent: 0</span>
+          <span class="count received" id="receivedCount">Received: 0</span>
+        </div>
+        <div id="dataStats">Data sent: 0 B | Data received: 0 B</div>
+      </div>
+    </div>
+    
+    <div class="panel">
+      <div class="controls">
+        <input type="text" id="messageInput" placeholder="Type a message..." />
+        <button id="sendButton" disabled>Send</button>
+        <button id="clearButton" class="clear-btn">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const messagesDiv = document.getElementById('messages');
+    const inputEl = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const clearButton = document.getElementById('clearButton');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const protocolInfo = document.getElementById('protocolInfo');
+    const sentCount = document.getElementById('sentCount');
+    const receivedCount = document.getElementById('receivedCount');
+    const dataStats = document.getElementById('dataStats');
+    
+    // Stats tracking
+    let stats = {
+      sent: 0,
+      received: 0,
+      bytesSent: 0,
+      bytesReceived: 0
+    };
+    
+    // Create WebSocket connection
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/ac/');
+    
+    // Handle socket open
+    socket.onopen = function (event) {
+      statusIndicator.classList.add('connected');
+      statusIndicator.classList.remove('disconnected');
+      connectionStatus.textContent = 'Connected';
+      protocolInfo.textContent = socket.protocol ? `Protocol: ${socket.protocol}` : '';
+      sendButton.disabled = false;
+      
+      appendMessage('Connected to server', 'system');
+      updateStats();
+    };
+    
+    // Handle incoming messages
+    socket.onmessage = function (event) {
+      stats.received++;
+      stats.bytesReceived += new Blob([event.data]).size;
+      
+      try {
+        const data = JSON.parse(event.data);
+        if (data.message) {
+          appendMessage(data.message, 'received', data);
+        } else {
+          appendMessage(JSON.stringify(data), 'received', data);
+        }
+        
+        // Auto-reply if server requests
+        if (data.command === 'send_data') {
+          const reply = { message: 'Response to server request', type: 'response' };
+          sendMessage(reply);
+        }
+      } catch (err) {
+        // Not JSON data
+        appendMessage(event.data, 'received');
+      }
+      
+      updateStats();
+    };
+    
+    // Handle socket close
+    socket.onclose = function (event) {
+      statusIndicator.classList.add('disconnected');
+      statusIndicator.classList.remove('connected');
+      connectionStatus.textContent = 'Disconnected';
+      sendButton.disabled = true;
+      
+      let reason = '';
+      // Handle close reasons
+      if (event.code !== 1000) {
+        if (event.code === 1001) reason = 'Endpoint going away';
+        else if (event.code === 1002) reason = 'Protocol error';
+        else if (event.code === 1003) reason = 'Unsupported data';
+        else if (event.code === 1006) reason = 'Abnormal closure';
+        else if (event.code === 1007) reason = 'Invalid frame payload data';
+        else if (event.code === 1008) reason = 'Policy violation';
+        else if (event.code === 1009) reason = 'Message too big';
+        else if (event.code === 1010) reason = 'Missing extension';
+        else if (event.code === 1011) reason = 'Internal error';
+        else if (event.code === 1012) reason = 'Service restart';
+        else if (event.code === 1013) reason = 'Try again later';
+        else if (event.code === 1015) reason = 'TLS handshake failure';
+        else reason = `Unknown (${event.code})`;
+      }
+      
+      appendMessage(`Disconnected from server${reason ? ': ' + reason : ''}`, 'system');
+    };
+    
+    // Handle socket errors
+    socket.onerror = function (error) {
+      appendMessage('WebSocket error: ' + (error.message || 'Unknown error'), 'system');
+    };
+    
+    // Send button click
+    sendButton.onclick = function () {
+      const msg = inputEl.value.trim();
+      if (!msg) return;
+      
+      const payload = { message: msg, type: 'manual', timestamp: Date.now() };
+      sendMessage(payload);
+      
+      inputEl.value = '';
+      inputEl.focus();
+    };
+    
+    // Enter key to send
+    inputEl.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !sendButton.disabled) {
+        sendButton.click();
+      }
+    });
+    
+    // Clear button click
+    clearButton.onclick = function() {
+      messagesDiv.innerHTML = '';
+      appendMessage('Messages cleared', 'system');
+    };
+    
+    // Send message helper function
+    function sendMessage(payload) {
+      const jsonData = JSON.stringify(payload);
+      socket.send(jsonData);
+      
+      stats.sent++;
+      stats.bytesSent += new Blob([jsonData]).size;
+      
+      appendMessage(payload.message, 'sent', payload);
+      updateStats();
+    }
+    
+    // Format file size
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Update statistics display
+    function updateStats() {
+      sentCount.textContent = `Sent: ${stats.sent}`;
+      receivedCount.textContent = `Received: ${stats.received}`;
+      dataStats.textContent = `Data sent: ${formatBytes(stats.bytesSent)} | Data received: ${formatBytes(stats.bytesReceived)}`;
+    }
+    
+    // Get current time formatted
+    function getCurrentTime() {
+      const now = new Date();
+      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    
+    // Append message to UI
+    function appendMessage(text, type, data = null) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      
+      // Message content
+      const content = document.createElement('div');
+      content.textContent = text;
+      messageDiv.appendChild(content);
+      
+      // Timestamp
+      const timestamp = document.createElement('div');
+      timestamp.className = 'timestamp';
+      timestamp.textContent = getCurrentTime();
+      messageDiv.appendChild(timestamp);
+      
+      // If it's not a system message and has data, show data size
+      if (type !== 'system' && data) {
+        const size = new Blob([JSON.stringify(data)]).size;
+        const dataSize = document.createElement('div');
+        dataSize.className = 'data-size';
+        dataSize.textContent = `Size: ${formatBytes(size)}`;
+        messageDiv.appendChild(dataSize);
+      }
+      
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    // Initial status
+    statusIndicator.classList.add('disconnected');
+  </script>
+</body>
+</html>
