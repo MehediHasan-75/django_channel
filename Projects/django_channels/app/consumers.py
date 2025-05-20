@@ -45,10 +45,10 @@ class MySyncConsumer(SyncConsumer):
 
 class MyAsyncConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print('WebSocket Connected...')
+        # print('WebSocket Connected...')
         # Join a group
-        print('channle layer', self.channel_layer)
-        print('get channle name', self.channel_name)
+        # print('channle layer', self.channel_layer)
+        # print('get channle name', self.channel_name)
         await self.channel_layer.group_add("broadcast_group", self.channel_name)
         await self.accept()
         await self.send(text_data=json.dumps({
@@ -64,28 +64,26 @@ class MyAsyncConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         print("Receive triggered:", text_data)
         if text_data:
-            text_data_json = json.loads(text_data)
-            message = text_data_json.get('message', '')
-            sender = text_data_json.get('sender', '')
+            try:
+                text_data_json = json.loads(text_data)
+                message = text_data_json.get('message', '')
+                
+                # Only process messages from client, not auto-responses
+                if not text_data_json.get('is_response'):
+                    await self.channel_layer.group_send(
+                        "broadcast_group",
+                        {
+                            "type": "broadcast_message",
+                            "message": message
+                        }
+                    )
+            except json.JSONDecodeError:
+                print("Invalid JSON received")
 
-            if sender == "server":
-                print("Ignored server-originated message.")
-                return  # Don't rebroadcast
-
-            print("Broadcasting to group...")
-            await self.channel_layer.group_send(
-                "broadcast_group",
-                {
-                    "type": "broadcast.message",
-                    "message": message,
-                    "sender": "server"
-                }
-            )
-
-    async def broadcast_message(self, event):  # Make this method async
+    async def broadcast_message(self, event):
         print("Broadcasting message to client:", event['message'])
         await self.send(text_data=json.dumps({
             "message": event['message'],
             "command": "send_data",
-            "sender": "server"
+            "is_response": True  # Mark this as a response
         }))

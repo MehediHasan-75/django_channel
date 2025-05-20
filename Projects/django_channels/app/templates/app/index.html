@@ -230,29 +230,23 @@
     };
     
     // Handle incoming messages
-    socket.onmessage = function (event) {
-      stats.received++;
-      stats.bytesReceived += new Blob([event.data]).size;
-      
+    socket.onmessage = function (e) {
+      console.log("Received:", e.data);
       try {
-        const data = JSON.parse(event.data);
-        if (data.message) {
-          appendMessage(data.message, 'received', data);
-        } else {
-          appendMessage(JSON.stringify(data), 'received', data);
-        }
+        const data = JSON.parse(e.data);
+        appendMessage('Received: ' + JSON.stringify(data.message));
         
-        // Auto-reply if server requests
-        if (data.command === 'send_data') {
-          const reply = { message: 'Response to server request', type: 'response' };
-          sendMessage(reply);
+        // Only respond to send_data command if it's not already a response
+        if (data.command === 'send_data' && !data.is_response) {
+          appendMessage('Server requested data, sending response...');
+          socket.send(JSON.stringify({
+            'message': 'Response to server request',
+            'is_response': true
+          }));
         }
-      } catch (err) {
-        // Not JSON data
-        appendMessage(event.data, 'received');
+      } catch (error) {
+        appendMessage('Received raw: ' + e.data);
       }
-      
-      updateStats();
     };
     
     // Handle socket close

@@ -1,15 +1,9 @@
 {
     "mcpServers": {
-        "weather_server": {
+        "socket_server":{
             "command": "python",
-            "args": [
-                "wp_ai_api/apps/workspace/mcp/servers/weather_server/weather.py"
-            ]
-        },
-        "wordpress_server": {
-            "command": "python",
-            "args": [
-                "wp_ai_api/apps/workspace/mcp/servers/wordpress_server/server.py"
+            "args":[
+                "wp_ai_api/apps/workspace/mcp/servers/socket_server.py"
             ]
         }
     }

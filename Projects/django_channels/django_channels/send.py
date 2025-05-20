@@ -43,13 +43,13 @@ except Exception as e:
     print("Make sure to update 'your_project_name' with your actual Django project name.")
     sys.exit(1)
 
-def send_ws_message(message):
+async def send_ws_message(message):
     """
     Utility function to send message to all WebSocket clients
     """
     try:
         channel_layer = get_channel_layer()
-        channel_layer.group_send(
+        await channel_layer.group_send(
             "broadcast_group",
             {
                 "type": "broadcast_message",
