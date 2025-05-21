@@ -176,6 +176,24 @@
       background-color: #f3e5f5;
       color: #4a148c;
     }
+    .debug-panel {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    .debug-switch {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: #757575;
+      margin-top: 10px;
+    }
+    #debugSwitch {
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -197,6 +215,16 @@
           <span class="count received" id="receivedCount">Received: 0</span>
         </div>
         <div id="dataStats">Data sent: 0 B | Data received: 0 B</div>
+      </div>
+      
+      <div class="debug-switch">
+        <input type="checkbox" id="debugSwitch">
+        <label for="debugSwitch">Show Debug Panel</label>
+      </div>
+      
+      <div id="debugPanel" class="debug-panel">
+        <h4>Debug Info</h4>
+        <pre id="debugInfo"></pre>
       </div>
     </div>
     
@@ -221,6 +249,9 @@
     const sentCount = document.getElementById('sentCount');
     const receivedCount = document.getElementById('receivedCount');
     const dataStats = document.getElementById('dataStats');
+    const debugSwitch = document.getElementById('debugSwitch');
+    const debugPanel = document.getElementById('debugPanel');
+    const debugInfo = document.getElementById('debugInfo');
     
     // Stats tracking
     let stats = {
@@ -231,8 +262,31 @@
       replies: 0
     };
     
+    // Debug mode toggle
+    debugSwitch.addEventListener('change', function() {
+      debugPanel.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Debug log function
+    function debugLog(message, data = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      let logMessage = `[${timestamp}] ${message}\n`;
+      
+      if (data) {
+        try {
+          logMessage += JSON.stringify(data, null, 2) + '\n';
+        } catch (e) {
+          logMessage += `[Unable to stringify data: ${e.message}]\n`;
+        }
+      }
+      
+      debugInfo.textContent = logMessage + debugInfo.textContent;
+    }
+    
     // Create WebSocket connection
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/ac/');
+    // Note: Make sure this matches your routing in Django Channels
+    const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const socket = new WebSocket(wsScheme + window.location.host + '/ws/ac/');
     
     // Track active request IDs that need replies
     let pendingReplies = {};
@@ -246,17 +300,27 @@
       sendButton.disabled = false;
       
       appendMessage('Connected to server', 'system');
+      debugLog('WebSocket connection opened');
       updateStats();
     };
     
     // Handle incoming messages
     socket.onmessage = function (e) {
       console.log("Received:", e.data);
+      debugLog('Raw message received', e.data);
+      
       try {
         const data = JSON.parse(e.data);
         stats.received++;
         stats.bytesReceived += e.data.length;
         updateStats();
+        
+        // If this is a greeting message
+        if (data.type === 'greeting') {
+          appendMessage(`Server greeting: ${data.message}`, 'system');
+          debugLog('Greeting received', data);
+          return;
+        }
         
         // Check if this is a message requiring a reply
         if (data.command === 'send_data' && data.requires_reply === true) {
@@ -268,45 +332,52 @@
           
           // Display the message with special formatting
           appendMessage(`Request from server (ID: ${messageId}): ${data.message}`, 'reply-request', data);
+          debugLog(`Reply request received with ID: ${messageId}`, data);
           
-          // Send reply automatically
-          const replyPayload = {
-            message: `Auto-reply to message ID: ${messageId}`,
-            message_id: messageId,
-            is_response: true,
-            client_info: {
-              timestamp: Date.now(),
-              browser: navigator.userAgent,
-              client_type: 'browser'
-            }
-          };
-          
-          // Send the reply
-          const jsonReply = JSON.stringify(replyPayload);
-          socket.send(jsonReply);
-          
-          // Update stats for the reply
-          stats.sent++;
-          stats.replies++;
-          stats.bytesSent += new Blob([jsonReply]).size;
-          
-          // Show reply in UI
-          appendMessage(`Sent reply for message ID: ${messageId}`, 'reply', replyPayload);
-          updateStats();
-          
-          // Remove from pending replies
-          delete pendingReplies[messageId];
+          // Send reply automatically after a small delay (makes it easier to follow in UI)
+          setTimeout(() => {
+            const replyPayload = {
+              message: `Auto-reply to message ID: ${messageId}`,
+              message_id: messageId,
+              is_response: true,
+              client_info: {
+                timestamp: Date.now(),
+                browser: navigator.userAgent,
+                client_type: 'browser'
+              }
+            };
+            
+            // Send the reply
+            const jsonReply = JSON.stringify(replyPayload);
+            socket.send(jsonReply);
+            debugLog(`Sending reply for message ID: ${messageId}`, replyPayload);
+            
+            // Update stats for the reply
+            stats.sent++;
+            stats.replies++;
+            stats.bytesSent += new Blob([jsonReply]).size;
+            
+            // Show reply in UI
+            appendMessage(`Sent reply for message ID: ${messageId}`, 'reply', replyPayload);
+            updateStats();
+            
+            // Remove from pending replies
+            delete pendingReplies[messageId];
+          }, 500);
         } 
         // Handle regular messages
         else if (data.message) {
           appendMessage(`Received: ${data.message}`, 'received', data);
+          debugLog('Regular message received', data);
         }
         // Handle other messages
         else {
           appendMessage(`Received data: ${JSON.stringify(data)}`, 'received', data);
+          debugLog('Other data received', data);
         }
       } catch (error) {
         appendMessage('Received raw: ' + e.data, 'received');
+        debugLog('Failed to parse message as JSON', { error: error.message, data: e.data });
         stats.received++;
         stats.bytesReceived += e.data.length;
         updateStats();
@@ -337,13 +408,35 @@
         else if (event.code === 1015) reason = 'TLS handshake failure';
         else reason = `Unknown (${event.code})`;
       }
+      const closeMessage = `Disconnected from server${reason ? ': ' + reason : ''}`;
+      appendMessage(closeMessage, 'system');
+      debugLog(closeMessage, { code: event.code, reason: reason });
       
-      appendMessage(`Disconnected from server${reason ? ': ' + reason : ''}`, 'system');
+      // Attempt to reconnect after a delay
+      setTimeout(() => {
+        appendMessage('Attempting to reconnect...', 'system');
+        debugLog('Attempting to reconnect');
+        
+        // Create a new WebSocket connection
+        const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const newSocket = new WebSocket(wsScheme + window.location.host + '/ws/ac/');
+        
+        // Update the socket reference
+        window.socket = newSocket;
+        
+        // Reattach event handlers (would be cleaner to use a function)
+        newSocket.onopen = socket.onopen;
+        newSocket.onmessage = socket.onmessage;
+        newSocket.onclose = socket.onclose;
+        newSocket.onerror = socket.onerror;
+      }, 3000);
     };
     
     // Handle socket errors
     socket.onerror = function (error) {
-      appendMessage('WebSocket error: ' + (error.message || 'Unknown error'), 'system');
+      const errorMessage = 'WebSocket error: ' + (error.message || 'Unknown error');
+      appendMessage(errorMessage, 'system');
+      debugLog('WebSocket error', error);
     };
     
     // Send button click
@@ -374,12 +467,14 @@
     clearButton.onclick = function() {
       messagesDiv.innerHTML = '';
       appendMessage('Messages cleared', 'system');
+      debugLog('Message display cleared');
     };
     
     // Send message helper function
     function sendMessage(payload) {
       const jsonData = JSON.stringify(payload);
       socket.send(jsonData);
+      debugLog('Sending message', payload);
       
       stats.sent++;
       stats.bytesSent += new Blob([jsonData]).size;
@@ -453,6 +548,12 @@
     
     // Initial status
     statusIndicator.classList.add('disconnected');
+    
+    // Expose the socket globally for debugging in console
+    window.socket = socket;
+    
+    // Initial debug log
+    debugLog('WebSocket client initialized');
   </script>
 </body>
 </html>

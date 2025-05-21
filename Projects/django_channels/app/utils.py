@@ -137,11 +137,11 @@ async def send_message_async():
                     # Use a shorter timeout for each receive attempt
                     message = await asyncio.wait_for(
                         channel_layer.receive(reply_channel),
-                        timeout=0.5
+                        timeout=0.02
                     )
                     
                     if message.get("type") == "websocket.reply":
-                        print(f"Reply received: {message['content']}")
+                        print(f"Reply received: {message['content'].get('actual_message')}")
                         replies.append(message["content"])
                 except asyncio.TimeoutError:
                     # No message in this interval, continue waiting
