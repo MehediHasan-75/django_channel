@@ -34,21 +34,51 @@ class MySyncConsumer(SyncConsumer):
         raise StopConsumer()
 
     def broadcast_message(self, event):
-        print("Broadcasting message to client:", event['message'])
-        self.send({
-            "type": "websocket.send",
-            "text": json.dumps({
-                "message": event['message'],
-                "command": "send_data"
+        print("Broadcasting message to client:", event)
+        
+        # Check if this is a message that requires a reply
+        if event.get('command') == 'request_reply' and 'reply_channel' in event:
+            message_id = event.get('message_id', 'unknown')
+            reply_channel = event.get('reply_channel')
+            
+            # Send the original message to the client
+            self.send({
+                "type": "websocket.send",
+                "text": json.dumps({
+                    "message": event['message'],
+                    "command": "send_data",
+                    "requires_reply": True,
+                    "message_id": message_id
+                })
             })
-        })
+            
+            # Then send a reply back to the script
+            async_to_sync(self.channel_layer.group_send)(
+                reply_channel,
+                {
+                    "type": "websocket.reply",
+                    "content": {
+                        "consumer": "sync",
+                        "channel_name": self.channel_name,
+                        "message_id": message_id,
+                        "status": "received"
+                    }
+                }
+            )
+        else:
+            # Regular message without reply requirement
+            self.send({
+                "type": "websocket.send",
+                "text": json.dumps({
+                    "message": event['message'],
+                    "command": "send_data"
+                })
+            })
+
 
 class MyAsyncConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # print('WebSocket Connected...')
         # Join a group
-        # print('channle layer', self.channel_layer)
-        # print('get channle name', self.channel_name)
         await self.channel_layer.group_add("broadcast_group", self.channel_name)
         await self.accept()
         await self.send(text_data=json.dumps({
@@ -67,7 +97,6 @@ class MyAsyncConsumer(AsyncWebsocketConsumer):
             try:
                 text_data_json = json.loads(text_data)
                 message = text_data_json.get('message', '')
-                
                 # Only process messages from client, not auto-responses
                 if not text_data_json.get('is_response'):
                     await self.channel_layer.group_send(
@@ -81,9 +110,39 @@ class MyAsyncConsumer(AsyncWebsocketConsumer):
                 print("Invalid JSON received")
 
     async def broadcast_message(self, event):
-        print("Broadcasting message to client:", event['message'])
-        await self.send(text_data=json.dumps({
-            "message": event['message'],
-            "command": "send_data",
-            "is_response": True  # Mark this as a response
-        }))
+        print("Broadcasting message to client:", event)
+        
+        # Check if this is a message that requires a reply
+        if event.get('command') == 'request_reply' and 'reply_channel' in event:
+            message_id = event.get('message_id', 'unknown')
+            reply_channel = event.get('reply_channel')
+            
+            # Send the original message to the client
+            await self.send(text_data=json.dumps({
+                "message": event['message'],
+                "command": "send_data",
+                "requires_reply": True,
+                "message_id": message_id,
+                "is_response": True
+            }))
+            
+            # Then send a reply back to the script
+            await self.channel_layer.group_send(
+                reply_channel,
+                {
+                    "type": "websocket.reply",
+                    "content": {
+                        "consumer": "async",
+                        "channel_name": self.channel_name,
+                        "message_id": message_id,
+                        "status": "received"
+                    }
+                }
+            )
+        else:
+            # Regular message without reply requirement
+            await self.send(text_data=json.dumps({
+                "message": event['message'],
+                "command": "send_data",
+                "is_response": True
+            }))

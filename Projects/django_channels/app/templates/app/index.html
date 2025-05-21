@@ -160,6 +160,22 @@
     .clear-btn:hover {
       background-color: #d32f2f;
     }
+    .highlight {
+      background-color: #fff59d;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .message.reply-request {
+      border-left: 3px solid #ff9800;
+      background-color: #fff3e0;
+      color: #e65100;
+    }
+    .message.reply {
+      border-left: 3px solid #9c27b0;
+      background-color: #f3e5f5;
+      color: #4a148c;
+    }
   </style>
 </head>
 <body>
@@ -211,11 +227,15 @@
       sent: 0,
       received: 0,
       bytesSent: 0,
-      bytesReceived: 0
+      bytesReceived: 0,
+      replies: 0
     };
     
     // Create WebSocket connection
     const socket = new WebSocket('ws://' + window.location.host + '/ws/ac/');
+    
+    // Track active request IDs that need replies
+    let pendingReplies = {};
     
     // Handle socket open
     socket.onopen = function (event) {
@@ -234,18 +254,62 @@
       console.log("Received:", e.data);
       try {
         const data = JSON.parse(e.data);
-        appendMessage('Received: ' + JSON.stringify(data.message));
+        stats.received++;
+        stats.bytesReceived += e.data.length;
+        updateStats();
         
-        // Only respond to send_data command if it's not already a response
-        if (data.command === 'send_data' && !data.is_response) {
-          appendMessage('Server requested data, sending response...');
-          socket.send(JSON.stringify({
-            'message': 'Response to server request',
-            'is_response': true
-          }));
+        // Check if this is a message requiring a reply
+        if (data.command === 'send_data' && data.requires_reply === true) {
+          // This is a request that needs a reply
+          const messageId = data.message_id || 'unknown';
+          
+          // Store in pending replies
+          pendingReplies[messageId] = true;
+          
+          // Display the message with special formatting
+          appendMessage(`Request from server (ID: ${messageId}): ${data.message}`, 'reply-request', data);
+          
+          // Send reply automatically
+          const replyPayload = {
+            message: `Auto-reply to message ID: ${messageId}`,
+            message_id: messageId,
+            is_response: true,
+            client_info: {
+              timestamp: Date.now(),
+              browser: navigator.userAgent,
+              client_type: 'browser'
+            }
+          };
+          
+          // Send the reply
+          const jsonReply = JSON.stringify(replyPayload);
+          socket.send(jsonReply);
+          
+          // Update stats for the reply
+          stats.sent++;
+          stats.replies++;
+          stats.bytesSent += new Blob([jsonReply]).size;
+          
+          // Show reply in UI
+          appendMessage(`Sent reply for message ID: ${messageId}`, 'reply', replyPayload);
+          updateStats();
+          
+          // Remove from pending replies
+          delete pendingReplies[messageId];
+        } 
+        // Handle regular messages
+        else if (data.message) {
+          appendMessage(`Received: ${data.message}`, 'received', data);
+        }
+        // Handle other messages
+        else {
+          appendMessage(`Received data: ${JSON.stringify(data)}`, 'received', data);
         }
       } catch (error) {
-        appendMessage('Received raw: ' + e.data);
+        appendMessage('Received raw: ' + e.data, 'received');
+        stats.received++;
+        stats.bytesReceived += e.data.length;
+        updateStats();
       }
     };
     
@@ -287,7 +351,12 @@
       const msg = inputEl.value.trim();
       if (!msg) return;
       
-      const payload = { message: msg, type: 'manual', timestamp: Date.now() };
+      const payload = { 
+        message: msg, 
+        type: 'manual', 
+        timestamp: Date.now(),
+        is_response: false // Explicitly mark this as not a response
+      };
       sendMessage(payload);
       
       inputEl.value = '';
@@ -331,7 +400,8 @@
     function updateStats() {
       sentCount.textContent = `Sent: ${stats.sent}`;
       receivedCount.textContent = `Received: ${stats.received}`;
-      dataStats.textContent = `Data sent: ${formatBytes(stats.bytesSent)} | Data received: ${formatBytes(stats.bytesReceived)}`;
+      const replyText = stats.replies > 0 ? ` | Replies: ${stats.replies}` : '';
+      dataStats.textContent = `Data sent: ${formatBytes(stats.bytesSent)} | Data received: ${formatBytes(stats.bytesReceived)}${replyText}`;
     }
     
     // Get current time formatted
@@ -347,7 +417,19 @@
       
       // Message content
       const content = document.createElement('div');
-      content.textContent = text;
+      
+      // Check if message has a special ID to highlight
+      if (data && data.message_id) {
+        const parts = text.split(`ID: ${data.message_id}`);
+        if (parts.length > 1) {
+          content.innerHTML = parts[0] + 'ID: <span class="highlight">' + data.message_id + '</span>' + parts[1];
+        } else {
+          content.textContent = text;
+        }
+      } else {
+        content.textContent = text;
+      }
+      
       messageDiv.appendChild(content);
       
       // Timestamp
