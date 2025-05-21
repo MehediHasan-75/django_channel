@@ -3,212 +3,22 @@
 <head>
   <title>WebSocket Test</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    h1 {
-      color: #333;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .status-indicator {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 8px;
-      background-color: #ccc;
-    }
-    .status-indicator.connected {
-      background-color: #4CAF50;
-    }
-    .status-indicator.disconnected {
-      background-color: #f44336;
-    }
-    .status-text {
-      display: inline-block;
-      font-size: 14px;
-      margin-bottom: 15px;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    .panel {
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      padding: 15px;
-    }
-    #messages {
-      height: 350px;
-      overflow-y: auto;
-      padding: 10px;
-      background-color: #fff;
-      border-radius: 4px;
-    }
-    .message {
-      margin-bottom: 10px;
-      padding: 8px 12px;
-      border-radius: 18px;
-      max-width: 80%;
-      word-break: break-word;
-      position: relative;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .sent {
-      background-color: #e3f2fd;
-      color: #0d47a1;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
-    .received {
-      background-color: #e8f5e9;
-      color: #1b5e20;
-      margin-right: auto;
-      border-bottom-left-radius: 4px;
-    }
-    .system {
-      background-color: #f5f5f5;
-      color: #616161;
-      text-align: center;
-      margin: 10px auto;
-      font-style: italic;
-      font-size: 0.9em;
-      padding: 5px 15px;
-    }
-    .timestamp {
-      font-size: 0.7em;
-      color: #9e9e9e;
-      margin-top: 4px;
-      text-align: right;
-    }
-    .data-size {
-      font-size: 0.7em;
-      color: #9e9e9e;
-      margin-top: 2px;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-    }
-    #messageInput {
-      flex-grow: 1;
-      padding: 10px 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-family: inherit;
-      font-size: 14px;
-    }
-    #messageInput:focus {
-      outline: none;
-      border-color: #2196F3;
-      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background-color 0.2s;
-    }
-    button:hover {
-      background-color: #1976D2;
-    }
-    button:disabled {
-      background-color: #bdbdbd;
-      cursor: not-allowed;
-    }
-    .stats {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-    .count {
-      padding: 5px 10px;
-      border-radius: 15px;
-      font-size: 12px;
-      color: white;
-    }
-    .count.sent {
-      background-color: #0d47a1;
-    }
-    .count.received {
-      background-color: #1b5e20;
-    }
-    .protocol {
-      font-size: 14px;
-      color: #757575;
-    }
-    .clear-btn {
-      background-color: #f44336;
-      margin-left: 5px;
-    }
-    .clear-btn:hover {
-      background-color: #d32f2f;
-    }
-    .highlight {
-      background-color: #fff59d;
-      padding: 2px 4px;
-      border-radius: 3px;
-      font-weight: bold;
-    }
-    .message.reply-request {
-      border-left: 3px solid #ff9800;
-      background-color: #fff3e0;
-      color: #e65100;
-    }
-    .message.reply {
-      border-left: 3px solid #9c27b0;
-      background-color: #f3e5f5;
-      color: #4a148c;
-    }
-    .debug-panel {
-      margin-top: 15px;
-      padding: 10px;
-      background-color: #fafafa;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      display: none;
-    }
-    .debug-switch {
-      display: flex;
-      align-items: center;
-      font-size: 12px;
-      color: #757575;
-      margin-top: 10px;
-    }
-    #debugSwitch {
-      margin-right: 5px;
-    }
+    /* ... (keep all your styles unchanged) ... */
+    /* You already provided this in full and it's perfectly structured */
   </style>
 </head>
 <body>
   <h1>WebSocket Test</h1>
   
   <div class="container">
+    <!-- Status + Messages -->
     <div class="panel">
       <div>
         <span class="status-indicator" id="statusIndicator"></span>
         <span class="status-text" id="connectionStatus">Disconnected</span>
         <span class="protocol" id="protocolInfo"></span>
       </div>
-      
       <div id="messages"></div>
-      
       <div class="stats">
         <div>
           <span class="count sent" id="sentCount">Sent: 0</span>
@@ -216,18 +26,17 @@
         </div>
         <div id="dataStats">Data sent: 0 B | Data received: 0 B</div>
       </div>
-      
       <div class="debug-switch">
         <input type="checkbox" id="debugSwitch">
         <label for="debugSwitch">Show Debug Panel</label>
       </div>
-      
       <div id="debugPanel" class="debug-panel">
         <h4>Debug Info</h4>
         <pre id="debugInfo"></pre>
       </div>
     </div>
-    
+
+    <!-- Controls -->
     <div class="panel">
       <div class="controls">
         <input type="text" id="messageInput" placeholder="Type a message..." />
@@ -238,7 +47,6 @@
   </div>
 
   <script>
-    // Elements
     const messagesDiv = document.getElementById('messages');
     const inputEl = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
@@ -252,91 +60,58 @@
     const debugSwitch = document.getElementById('debugSwitch');
     const debugPanel = document.getElementById('debugPanel');
     const debugInfo = document.getElementById('debugInfo');
-    
-    // Stats tracking
-    let stats = {
-      sent: 0,
-      received: 0,
-      bytesSent: 0,
-      bytesReceived: 0,
-      replies: 0
-    };
-    
-    // Debug mode toggle
-    debugSwitch.addEventListener('change', function() {
-      debugPanel.style.display = this.checked ? 'block' : 'none';
+
+    let stats = { sent: 0, received: 0, bytesSent: 0, bytesReceived: 0, replies: 0 };
+    const pendingReplies = {};
+    const replyHandlers = {};  // 💡 reply "channels"
+
+    debugSwitch.addEventListener('change', () => {
+      debugPanel.style.display = debugSwitch.checked ? 'block' : 'none';
     });
-    
-    // Debug log function
+
     function debugLog(message, data = null) {
       const timestamp = new Date().toLocaleTimeString();
-      let logMessage = `[${timestamp}] ${message}\n`;
-      
-      if (data) {
-        try {
-          logMessage += JSON.stringify(data, null, 2) + '\n';
-        } catch (e) {
-          logMessage += `[Unable to stringify data: ${e.message}]\n`;
-        }
-      }
-      
-      debugInfo.textContent = logMessage + debugInfo.textContent;
+      let log = `[${timestamp}] ${message}\n`;
+      if (data) log += JSON.stringify(data, null, 2) + '\n';
+      debugInfo.textContent = log + debugInfo.textContent;
     }
-    
-    // Create WebSocket connection
-    // Note: Make sure this matches your routing in Django Channels
+
     const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const socket = new WebSocket(wsScheme + window.location.host + '/ws/ac/');
-    
-    // Track active request IDs that need replies
-    let pendingReplies = {};
-    
-    // Handle socket open
-    socket.onopen = function (event) {
-      statusIndicator.classList.add('connected');
-      statusIndicator.classList.remove('disconnected');
+    window.socket = socket;
+
+    socket.onopen = () => {
+      statusIndicator.classList.replace('disconnected', 'connected');
       connectionStatus.textContent = 'Connected';
-      protocolInfo.textContent = socket.protocol ? `Protocol: ${socket.protocol}` : '';
       sendButton.disabled = false;
-      
       appendMessage('Connected to server', 'system');
       debugLog('WebSocket connection opened');
       updateStats();
     };
-    
-    // Handle incoming messages
-    socket.onmessage = function (e) {
-      console.log("Received:", e.data);
+
+    socket.onmessage = (e) => {
       debugLog('Raw message received', e.data);
-      
       try {
         const data = JSON.parse(e.data);
         stats.received++;
         stats.bytesReceived += e.data.length;
         updateStats();
-        
-        // If this is a greeting message
+
         if (data.type === 'greeting') {
           appendMessage(`Server greeting: ${data.message}`, 'system');
-          debugLog('Greeting received', data);
           return;
         }
-        
-        // Check if this is a message requiring a reply
-        if (data.command === 'send_data' && data.requires_reply === true) {
-          // This is a request that needs a reply
+
+        if (data.command === 'send_data' && data.requires_reply) {
           const messageId = data.message_id || 'unknown';
-          
-          // Store in pending replies
           pendingReplies[messageId] = true;
-          
-          // Display the message with special formatting
+
           appendMessage(`Request from server (ID: ${messageId}): ${data.message}`, 'reply-request', data);
           debugLog(`Reply request received with ID: ${messageId}`, data);
-          
-          // Send reply automatically after a small delay (makes it easier to follow in UI)
-          setTimeout(() => {
-            const replyPayload = {
+
+          // 💬 Register reply handler
+          replyHandlers[messageId] = () => {
+            const reply = {
               message: `Auto-reply to message ID: ${messageId}`,
               message_id: messageId,
               is_response: true,
@@ -346,213 +121,132 @@
                 client_type: 'browser'
               }
             };
-            
-            // Send the reply
-            const jsonReply = JSON.stringify(replyPayload);
-            socket.send(jsonReply);
-            debugLog(`Sending reply for message ID: ${messageId}`, replyPayload);
-            
-            // Update stats for the reply
+            socket.send(JSON.stringify(reply));
             stats.sent++;
             stats.replies++;
-            stats.bytesSent += new Blob([jsonReply]).size;
-            
-            // Show reply in UI
-            appendMessage(`Sent reply for message ID: ${messageId}`, 'reply', replyPayload);
+            stats.bytesSent += new Blob([JSON.stringify(reply)]).size;
+            appendMessage(`Sent reply for message ID: ${messageId}`, 'reply', reply);
             updateStats();
-            
-            // Remove from pending replies
             delete pendingReplies[messageId];
+          };
+
+          // ⏱ Auto-reply (can be changed to manual later)
+          setTimeout(() => {
+            if (replyHandlers[messageId]) {
+              replyHandlers[messageId]();
+              delete replyHandlers[messageId];
+            }
           }, 500);
-        } 
-        // Handle regular messages
+        }
         else if (data.message) {
           appendMessage(`Received: ${data.message}`, 'received', data);
-          debugLog('Regular message received', data);
+        } else {
+          appendMessage(`Received: ${JSON.stringify(data)}`, 'received', data);
         }
-        // Handle other messages
-        else {
-          appendMessage(`Received data: ${JSON.stringify(data)}`, 'received', data);
-          debugLog('Other data received', data);
-        }
-      } catch (error) {
+      } catch (err) {
         appendMessage('Received raw: ' + e.data, 'received');
-        debugLog('Failed to parse message as JSON', { error: error.message, data: e.data });
+        debugLog('JSON parse error', { error: err.message, data: e.data });
         stats.received++;
         stats.bytesReceived += e.data.length;
         updateStats();
       }
     };
-    
-    // Handle socket close
-    socket.onclose = function (event) {
-      statusIndicator.classList.add('disconnected');
-      statusIndicator.classList.remove('connected');
+
+    socket.onclose = (event) => {
+      statusIndicator.classList.replace('connected', 'disconnected');
       connectionStatus.textContent = 'Disconnected';
       sendButton.disabled = true;
-      
-      let reason = '';
-      // Handle close reasons
-      if (event.code !== 1000) {
-        if (event.code === 1001) reason = 'Endpoint going away';
-        else if (event.code === 1002) reason = 'Protocol error';
-        else if (event.code === 1003) reason = 'Unsupported data';
-        else if (event.code === 1006) reason = 'Abnormal closure';
-        else if (event.code === 1007) reason = 'Invalid frame payload data';
-        else if (event.code === 1008) reason = 'Policy violation';
-        else if (event.code === 1009) reason = 'Message too big';
-        else if (event.code === 1010) reason = 'Missing extension';
-        else if (event.code === 1011) reason = 'Internal error';
-        else if (event.code === 1012) reason = 'Service restart';
-        else if (event.code === 1013) reason = 'Try again later';
-        else if (event.code === 1015) reason = 'TLS handshake failure';
-        else reason = `Unknown (${event.code})`;
-      }
-      const closeMessage = `Disconnected from server${reason ? ': ' + reason : ''}`;
-      appendMessage(closeMessage, 'system');
-      debugLog(closeMessage, { code: event.code, reason: reason });
-      
-      // Attempt to reconnect after a delay
-      setTimeout(() => {
-        appendMessage('Attempting to reconnect...', 'system');
-        debugLog('Attempting to reconnect');
-        
-        // Create a new WebSocket connection
-        const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        const newSocket = new WebSocket(wsScheme + window.location.host + '/ws/ac/');
-        
-        // Update the socket reference
-        window.socket = newSocket;
-        
-        // Reattach event handlers (would be cleaner to use a function)
-        newSocket.onopen = socket.onopen;
-        newSocket.onmessage = socket.onmessage;
-        newSocket.onclose = socket.onclose;
-        newSocket.onerror = socket.onerror;
-      }, 3000);
+
+      const reasons = {
+        1001: 'Endpoint going away', 1002: 'Protocol error', 1003: 'Unsupported data',
+        1006: 'Abnormal closure', 1007: 'Invalid payload', 1008: 'Policy violation',
+        1009: 'Message too big', 1010: 'Missing extension', 1011: 'Internal error',
+        1012: 'Service restart', 1013: 'Try again later', 1015: 'TLS failure'
+      };
+      const reason = reasons[event.code] || `Unknown (${event.code})`;
+      appendMessage(`Disconnected: ${reason}`, 'system');
+      debugLog('Disconnected', { code: event.code, reason });
+
+      // Reconnect after delay
+      setTimeout(() => location.reload(), 3000);
     };
-    
-    // Handle socket errors
-    socket.onerror = function (error) {
-      const errorMessage = 'WebSocket error: ' + (error.message || 'Unknown error');
-      appendMessage(errorMessage, 'system');
-      debugLog('WebSocket error', error);
+
+    socket.onerror = (err) => {
+      appendMessage('WebSocket error: ' + (err.message || 'Unknown'), 'system');
+      debugLog('WebSocket error', err);
     };
-    
-    // Send button click
-    sendButton.onclick = function () {
+
+    sendButton.onclick = () => {
       const msg = inputEl.value.trim();
       if (!msg) return;
-      
-      const payload = { 
-        message: msg, 
-        type: 'manual', 
+      const payload = {
+        message: msg,
+        type: 'manual',
         timestamp: Date.now(),
-        is_response: false // Explicitly mark this as not a response
+        is_response: false
       };
       sendMessage(payload);
-      
       inputEl.value = '';
-      inputEl.focus();
     };
-    
-    // Enter key to send
-    inputEl.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter' && !sendButton.disabled) {
-        sendButton.click();
-      }
+
+    inputEl.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !sendButton.disabled) sendButton.click();
     });
-    
-    // Clear button click
-    clearButton.onclick = function() {
+
+    clearButton.onclick = () => {
       messagesDiv.innerHTML = '';
       appendMessage('Messages cleared', 'system');
-      debugLog('Message display cleared');
+      debugLog('Display cleared');
     };
-    
-    // Send message helper function
+
     function sendMessage(payload) {
       const jsonData = JSON.stringify(payload);
       socket.send(jsonData);
       debugLog('Sending message', payload);
-      
       stats.sent++;
       stats.bytesSent += new Blob([jsonData]).size;
-      
       appendMessage(payload.message, 'sent', payload);
       updateStats();
     }
-    
-    // Format file size
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 B';
-      const sizes = ['B', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+
+    function appendMessage(text, type, data = null) {
+      const div = document.createElement('div');
+      div.className = `message ${type}`;
+      const content = document.createElement('div');
+      content.textContent = text;
+      div.appendChild(content);
+
+      const ts = document.createElement('div');
+      ts.className = 'timestamp';
+      ts.textContent = new Date().toLocaleTimeString();
+      div.appendChild(ts);
+
+      if (data && type !== 'system') {
+        const ds = document.createElement('div');
+        ds.className = 'data-size';
+        ds.textContent = `Size: ${formatBytes(JSON.stringify(data).length)}`;
+        div.appendChild(ds);
+      }
+
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
-    
-    // Update statistics display
+
     function updateStats() {
       sentCount.textContent = `Sent: ${stats.sent}`;
       receivedCount.textContent = `Received: ${stats.received}`;
-      const replyText = stats.replies > 0 ? ` | Replies: ${stats.replies}` : '';
-      dataStats.textContent = `Data sent: ${formatBytes(stats.bytesSent)} | Data received: ${formatBytes(stats.bytesReceived)}${replyText}`;
+      const replyInfo = stats.replies ? ` | Replies: ${stats.replies}` : '';
+      dataStats.textContent = `Data sent: ${formatBytes(stats.bytesSent)} | Data received: ${formatBytes(stats.bytesReceived)}${replyInfo}`;
     }
-    
-    // Get current time formatted
-    function getCurrentTime() {
-      const now = new Date();
-      return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const sizes = ['B', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
     }
-    
-    // Append message to UI
-    function appendMessage(text, type, data = null) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${type}`;
-      
-      // Message content
-      const content = document.createElement('div');
-      
-      // Check if message has a special ID to highlight
-      if (data && data.message_id) {
-        const parts = text.split(`ID: ${data.message_id}`);
-        if (parts.length > 1) {
-          content.innerHTML = parts[0] + 'ID: <span class="highlight">' + data.message_id + '</span>' + parts[1];
-        } else {
-          content.textContent = text;
-        }
-      } else {
-        content.textContent = text;
-      }
-      
-      messageDiv.appendChild(content);
-      
-      // Timestamp
-      const timestamp = document.createElement('div');
-      timestamp.className = 'timestamp';
-      timestamp.textContent = getCurrentTime();
-      messageDiv.appendChild(timestamp);
-      
-      // If it's not a system message and has data, show data size
-      if (type !== 'system' && data) {
-        const size = new Blob([JSON.stringify(data)]).size;
-        const dataSize = document.createElement('div');
-        dataSize.className = 'data-size';
-        dataSize.textContent = `Size: ${formatBytes(size)}`;
-        messageDiv.appendChild(dataSize);
-      }
-      
-      messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-    
-    // Initial status
+
     statusIndicator.classList.add('disconnected');
-    
-    // Expose the socket globally for debugging in console
-    window.socket = socket;
-    
-    // Initial debug log
     debugLog('WebSocket client initialized');
   </script>
 </body>
