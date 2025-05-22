@@ -1,9 +1,9 @@
 {
     "mcpServers": {
-        "socket_server":{
+        "socket_server": {
             "command": "python",
-            "args":[
-                "wp_ai_api/apps/workspace/mcp/servers/socket_server.py"
+            "args": [
+                "../mcp/socket_server.py"
             ]
         }
     }

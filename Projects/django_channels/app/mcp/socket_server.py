@@ -2,21 +2,25 @@
 
 import os
 import sys
+from pathlib import Path
+# Get the absolute path to the project root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(PROJECT_ROOT))
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_channels.settings')
 import django
-import asyncio
-import uuid
-import time
-from modelcontextprotocol import MCPServer, tool
+django.setup()
+
 from channels.layers import get_channel_layer
 
-# Setup Django environment
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_channels.settings')
-django.setup()
+from mcp.server.fastmcp import FastMCP
+import asyncio
+import uuid
 
 channel_layer = get_channel_layer()
 
-@tool(name="send_broadcast_message", description="Send a message via Django Channels and receive replies.")
+mcp = FastMCP("database_operations")
+@mcp.tool()
 async def send_broadcast_message(message: str) -> dict:
     message_id = str(uuid.uuid4())
     reply_channel = f"reply_{message_id}"
@@ -48,7 +52,7 @@ async def send_broadcast_message(message: str) -> dict:
                 continue
     finally:
         await channel_layer.group_discard(reply_channel, reply_channel)
-
+    print(f"[MCP] Received replies: {replies}")
     return {
         "message_id": message_id,
         "replies": replies
@@ -56,6 +60,4 @@ async def send_broadcast_message(message: str) -> dict:
 
 # --- Run MCP Server ---
 if __name__ == "__main__":
-    server = MCPServer()
-    server.register_tool(send_broadcast_message)
-    server.run()
+    mcp.run(transport="stdio")

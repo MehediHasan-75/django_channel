@@ -1,5 +1,15 @@
-import os
 import sys
+import os, asyncio
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Get the absolute path to the project root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(PROJECT_ROOT))
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_channels.settings')
+import django
+django.setup()
 import json
 from contextlib import AsyncExitStack
 
@@ -49,7 +59,7 @@ Example 2 (structured category table):
 User: "insert this into table for user 1, category transport: columns [Date, Amount, Vendor], rows [...], note: transport logs"
 → Tool: `insert_category_table(use_id="1", table_category="transport", table={...})`
 """
-
+load_dotenv()
 
 class ExpenseMCPClient:
 
@@ -57,6 +67,7 @@ class ExpenseMCPClient:
         self.anthropic_api_key = anthropic_api_key or getattr(
             settings, "ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY")
         )
+        print(self.anthropic_api_key)
         if not self.anthropic_api_key:
             raise ValueError("Anthropic API key is required.")
         self.exit_stack = None
@@ -67,11 +78,8 @@ class ExpenseMCPClient:
 
     @staticmethod
     def read_config_json():
-        config_path = os.getenv("mcpConfig")
-        if not config_path:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            config_path = os.path.join(script_dir, "mcpConfig.json")
-            print(f"[INFO] mcpConfig not set. Falling back to: {config_path}")
+        """Read MCP config from the same directory as this file"""
+        config_path = Path(__file__).parent / "mcpConfig.json"
         try:
             with open(config_path, "r") as f:
                 return json.load(f)
@@ -157,7 +165,7 @@ USER QUERY: {query}
             if isinstance(response, dict) and "tool_name" in response and "args" in response:
                 print(f"🛠️ Tool called: {response['tool_name']}")
                 print(f"🧾 Tool arguments: {json.dumps(response['args'], indent=2)}")
-                return response
+                return response.content
 
             elif isinstance(response, AIMessage):
                 return response.content
@@ -181,3 +189,6 @@ USER QUERY: {query}
             response = await self.process_query(query)
             print("\n📤 Response:")
             print(response)
+if __name__ == "__main__":
+    client = ExpenseMCPClient()
+    asyncio.run(client.run_interactive_loop())

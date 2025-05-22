@@ -1,24 +1,336 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>WebSocket Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Test Dashboard</title>
   <style>
-    /* ... (keep all your styles unchanged) ... */
-    /* You already provided this in full and it's perfectly structured */
+    :root {
+      --primary-color: #4a6cf7;
+      --secondary-color: #6c757d;
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --background-color: #f5f7ff;
+      --card-bg: #ffffff;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--background-color);
+      color: var(--dark-color);
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: var(--primary-color);
+      font-weight: 600;
+      position: relative;
+      padding-bottom: 10px;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background-color: var(--primary-color);
+      border-radius: 2px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        grid-template-columns: 3fr 2fr;
+      }
+    }
+
+    .panel {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .panel:hover {
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .connection-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+      display: inline-block;
+    }
+
+    .connected {
+      background-color: var(--success-color);
+      box-shadow: 0 0 8px var(--success-color);
+      animation: pulse 2s infinite;
+    }
+
+    .disconnected {
+      background-color: var(--danger-color);
+      box-shadow: 0 0 8px var(--danger-color);
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+      }
+    }
+
+    .status-text {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .protocol {
+      margin-left: 15px;
+      color: var(--secondary-color);
+      font-size: 14px;
+    }
+
+    .messages {
+      height: 400px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      background-color: #f8f9fa;
+      border: 1px solid #eee;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      padding: 10px 15px;
+      margin-bottom: 10px;
+      border-radius: var(--border-radius);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      max-width: 90%;
+    }
+
+    .system {
+      background-color: #f0f0f0;
+      border-left: 4px solid var(--secondary-color);
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 100%;
+      text-align: center;
+      color: var(--secondary-color);
+      font-style: italic;
+    }
+
+    .sent {
+      background-color: #e3f2fd;
+      border-left: 4px solid var(--primary-color);
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .received {
+      background-color: #f1f8e9;
+      border-left: 4px solid var(--success-color);
+      align-self: flex-start;
+    }
+
+    .reply-request {
+      background-color: #fff8e1;
+      border-left: 4px solid var(--warning-color);
+      align-self: flex-start;
+    }
+
+    .reply {
+      background-color: #e8eaf6;
+      border-left: 4px solid #5c6bc0;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: var(--secondary-color);
+      margin-top: 5px;
+      align-self: flex-end;
+    }
+
+    .data-size {
+      font-size: 11px;
+      color: var(--secondary-color);
+      margin-top: 2px;
+      align-self: flex-end;
+    }
+
+    .stats {
+      background-color: #f8f9fa;
+      border-radius: var(--border-radius);
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .stats div {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .count {
+      font-weight: 500;
+    }
+
+    .count.sent {
+      color: var(--primary-color);
+    }
+
+    .count.received {
+      color: var(--success-color);
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      transition: var(--transition);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.2);
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--border-radius);
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #3a5ae0;
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      background-color: #b8c2cc;
+      cursor: not-allowed;
+    }
+
+    .clear-btn {
+      background-color: var(--secondary-color);
+    }
+
+    .clear-btn:hover {
+      background-color: #5a6268;
+    }
+
+    .debug-switch {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .debug-switch input[type="checkbox"] {
+      margin-right: 10px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .debug-panel {
+      display: none;
+      background-color: #2b2b2b;
+      color: #e0e0e0;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-top: 15px;
+      overflow: auto;
+      max-height: 300px;
+    }
+
+    .debug-panel h4 {
+      color: #fff;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .debug-panel pre {
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
-  <h1>WebSocket Test</h1>
+  <h1>WebSocket Test Dashboard</h1>
   
   <div class="container">
-    <!-- Status + Messages -->
+    <!-- Status + Messages Panel -->
     <div class="panel">
-      <div>
+      <div class="connection-header">
         <span class="status-indicator" id="statusIndicator"></span>
         <span class="status-text" id="connectionStatus">Disconnected</span>
         <span class="protocol" id="protocolInfo"></span>
       </div>
-      <div id="messages"></div>
+      <div class="messages" id="messages"></div>
       <div class="stats">
         <div>
           <span class="count sent" id="sentCount">Sent: 0</span>
@@ -31,17 +343,22 @@
         <label for="debugSwitch">Show Debug Panel</label>
       </div>
       <div id="debugPanel" class="debug-panel">
-        <h4>Debug Info</h4>
+        <h4>Debug Information</h4>
         <pre id="debugInfo"></pre>
       </div>
     </div>
 
-    <!-- Controls -->
+    <!-- Controls Panel -->
     <div class="panel">
       <div class="controls">
         <input type="text" id="messageInput" placeholder="Type a message..." />
         <button id="sendButton" disabled>Send</button>
         <button id="clearButton" class="clear-btn">Clear</button>
+      </div>
+      
+      <div class="stats">
+        <h4>Connection Information</h4>
+        <div id="connectionInfo">Waiting for connection...</div>
       </div>
     </div>
   </div>
@@ -60,6 +377,7 @@
     const debugSwitch = document.getElementById('debugSwitch');
     const debugPanel = document.getElementById('debugPanel');
     const debugInfo = document.getElementById('debugInfo');
+    const connectionInfo = document.getElementById('connectionInfo');
 
     let stats = { sent: 0, received: 0, bytesSent: 0, bytesReceived: 0, replies: 0 };
     const pendingReplies = {};
@@ -86,6 +404,11 @@
       sendButton.disabled = false;
       appendMessage('Connected to server', 'system');
       debugLog('WebSocket connection opened');
+      connectionInfo.innerHTML = `
+        <strong>URL:</strong> ${wsScheme + window.location.host + '/ws/ac/'}<br>
+        <strong>Protocol:</strong> ${socket.protocol || 'none'}<br>
+        <strong>Status:</strong> Connected
+      `;
       updateStats();
     };
 
@@ -166,6 +489,12 @@
       const reason = reasons[event.code] || `Unknown (${event.code})`;
       appendMessage(`Disconnected: ${reason}`, 'system');
       debugLog('Disconnected', { code: event.code, reason });
+      
+      connectionInfo.innerHTML = `
+        <strong>Status:</strong> Disconnected<br>
+        <strong>Reason:</strong> ${reason}<br>
+        <strong>Reconnecting in 3 seconds...</strong>
+      `;
 
       // Reconnect after delay
       setTimeout(() => location.reload(), 3000);
