@@ -3,24 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket Test Dashboard</title>
+  <title>Simple Plugin WebSocket Dashboard</title>
   <style>
-    :root {
-      --primary-color: #4a6cf7;
-      --secondary-color: #6c757d;
-      --success-color: #28a745;
-      --danger-color: #dc3545;
-      --warning-color: #ffc107;
-      --info-color: #17a2b8;
-      --light-color: #f8f9fa;
-      --dark-color: #343a40;
-      --background-color: #f5f7ff;
-      --card-bg: #ffffff;
-      --border-radius: 8px;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      --transition: all 0.3s ease;
-    }
-
     * {
       margin: 0;
       padding: 0;
@@ -29,207 +13,103 @@
     }
 
     body {
-      background-color: var(--background-color);
-      color: var(--dark-color);
+      background-color: #f5f7ff;
+      color: #343a40;
       line-height: 1.6;
       padding: 20px;
     }
 
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
     h1 {
       text-align: center;
-      margin-bottom: 30px;
-      color: var(--primary-color);
-      font-weight: 600;
-      position: relative;
-      padding-bottom: 10px;
+      margin-bottom: 20px;
+      color: #4a6cf7;
     }
 
-    h1::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80px;
-      height: 4px;
-      background-color: var(--primary-color);
-      border-radius: 2px;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-    }
-
-    @media (min-width: 768px) {
-      .container {
-        grid-template-columns: 3fr 2fr;
-      }
-    }
-
-    .panel {
-      background-color: var(--card-bg);
-      border-radius: var(--border-radius);
-      padding: 20px;
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-    }
-
-    .panel:hover {
-      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .connection-header {
+    .status {
       display: flex;
       align-items: center;
       margin-bottom: 15px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #eee;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
     }
 
-    .status-indicator {
-      width: 12px;
-      height: 12px;
+    .status-dot {
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       margin-right: 10px;
-      display: inline-block;
     }
 
     .connected {
-      background-color: var(--success-color);
-      box-shadow: 0 0 8px var(--success-color);
-      animation: pulse 2s infinite;
+      background-color: #28a745;
     }
 
     .disconnected {
-      background-color: var(--danger-color);
-      box-shadow: 0 0 8px var(--danger-color);
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-      }
-      70% {
-        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-      }
-    }
-
-    .status-text {
-      font-weight: 600;
-      font-size: 16px;
-    }
-
-    .protocol {
-      margin-left: 15px;
-      color: var(--secondary-color);
-      font-size: 14px;
+      background-color: #dc3545;
     }
 
     .messages {
       height: 400px;
       overflow-y: auto;
       margin-bottom: 15px;
-      padding: 10px;
-      border-radius: var(--border-radius);
-      background-color: #f8f9fa;
-      border: 1px solid #eee;
-      scroll-behavior: smooth;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fafafa;
     }
 
     .message {
-      padding: 10px 15px;
-      margin-bottom: 10px;
-      border-radius: var(--border-radius);
-      position: relative;
-      display: flex;
-      flex-direction: column;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border-radius: 5px;
       max-width: 90%;
     }
 
     .system {
-      background-color: #f0f0f0;
-      border-left: 4px solid var(--secondary-color);
-      margin-left: auto;
-      margin-right: auto;
-      max-width: 100%;
+      background-color: #e9ecef;
+      color: #6c757d;
       text-align: center;
-      color: var(--secondary-color);
+      max-width: 100%;
       font-style: italic;
     }
 
     .sent {
-      background-color: #e3f2fd;
-      border-left: 4px solid var(--primary-color);
-      align-self: flex-end;
+      background-color: #d1ecf1;
+      border-left: 3px solid #17a2b8;
       margin-left: auto;
     }
 
     .received {
-      background-color: #f1f8e9;
-      border-left: 4px solid var(--success-color);
-      align-self: flex-start;
+      background-color: #d4edda;
+      border-left: 3px solid #28a745;
     }
 
     .reply-request {
-      background-color: #fff8e1;
-      border-left: 4px solid var(--warning-color);
-      align-self: flex-start;
+      background-color: #fff3cd;
+      border-left: 3px solid #ffc107;
+      color: #856404;
     }
 
     .reply {
-      background-color: #e8eaf6;
-      border-left: 4px solid #5c6bc0;
-      align-self: flex-end;
+      background-color: #e2e3f0;
+      border-left: 3px solid #6f42c1;
       margin-left: auto;
     }
 
     .timestamp {
-      font-size: 12px;
-      color: var(--secondary-color);
-      margin-top: 5px;
-      align-self: flex-end;
-    }
-
-    .data-size {
       font-size: 11px;
-      color: var(--secondary-color);
-      margin-top: 2px;
-      align-self: flex-end;
-    }
-
-    .stats {
-      background-color: #f8f9fa;
-      border-radius: var(--border-radius);
-      padding: 12px;
-      margin-bottom: 15px;
-      font-size: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .stats div {
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .count {
-      font-weight: 500;
-    }
-
-    .count.sent {
-      color: var(--primary-color);
-    }
-
-    .count.received {
-      color: var(--success-color);
+      color: #6c757d;
+      margin-top: 3px;
     }
 
     .controls {
@@ -240,126 +120,94 @@
 
     input[type="text"] {
       flex: 1;
-      padding: 12px 15px;
+      padding: 10px;
       border: 1px solid #ddd;
-      border-radius: var(--border-radius);
-      font-size: 16px;
-      transition: var(--transition);
-    }
-
-    input[type="text"]:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.2);
+      border-radius: 5px;
+      font-size: 14px;
     }
 
     button {
-      padding: 12px 20px;
+      padding: 10px 15px;
       border: none;
-      border-radius: var(--border-radius);
-      background-color: var(--primary-color);
+      border-radius: 5px;
+      background-color: #4a6cf7;
       color: white;
-      font-weight: 600;
       cursor: pointer;
-      transition: var(--transition);
+      font-size: 14px;
     }
 
     button:hover:not(:disabled) {
       background-color: #3a5ae0;
-      transform: translateY(-2px);
     }
 
     button:disabled {
-      background-color: #b8c2cc;
+      background-color: #ccc;
       cursor: not-allowed;
     }
 
-    .clear-btn {
-      background-color: var(--secondary-color);
-    }
-
-    .clear-btn:hover {
-      background-color: #5a6268;
-    }
-
-    .debug-switch {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .debug-switch input[type="checkbox"] {
-      margin-right: 10px;
-      width: 18px;
-      height: 18px;
-    }
-
-    .debug-panel {
-      display: none;
-      background-color: #2b2b2b;
-      color: #e0e0e0;
+    .plugin-structure {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
       padding: 15px;
-      border-radius: var(--border-radius);
       margin-top: 15px;
-      overflow: auto;
       max-height: 300px;
+      overflow-y: auto;
     }
 
-    .debug-panel h4 {
-      color: #fff;
+    .plugin-structure h4 {
       margin-bottom: 10px;
-      font-size: 16px;
+      color: #4a6cf7;
     }
 
-    .debug-panel pre {
-      font-family: 'Consolas', monospace;
-      font-size: 13px;
+    .file-item {
+      margin: 5px 0;
+      padding: 5px;
+      background-color: white;
+      border-radius: 3px;
+      cursor: pointer;
+      border-left: 3px solid #4a6cf7;
+    }
+
+    .file-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .file-content {
+      background-color: #2d3748;
+      color: #e2e8f0;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
       line-height: 1.4;
       white-space: pre-wrap;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
     }
   </style>
 </head>
 <body>
-  <h1>WebSocket Test Dashboard</h1>
-  
   <div class="container">
-    <!-- Status + Messages Panel -->
-    <div class="panel">
-      <div class="connection-header">
-        <span class="status-indicator" id="statusIndicator"></span>
-        <span class="status-text" id="connectionStatus">Disconnected</span>
-        <span class="protocol" id="protocolInfo"></span>
-      </div>
-      <div class="messages" id="messages"></div>
-      <div class="stats">
-        <div>
-          <span class="count sent" id="sentCount">Sent: 0</span>
-          <span class="count received" id="receivedCount">Received: 0</span>
-        </div>
-        <div id="dataStats">Data sent: 0 B | Data received: 0 B</div>
-      </div>
-      <div class="debug-switch">
-        <input type="checkbox" id="debugSwitch">
-        <label for="debugSwitch">Show Debug Panel</label>
-      </div>
-      <div id="debugPanel" class="debug-panel">
-        <h4>Debug Information</h4>
-        <pre id="debugInfo"></pre>
-      </div>
+    <h1>Plugin WebSocket Dashboard</h1>
+    
+    <div class="status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Disconnected</span>
     </div>
 
-    <!-- Controls Panel -->
-    <div class="panel">
-      <div class="controls">
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-        <button id="sendButton" disabled>Send</button>
-        <button id="clearButton" class="clear-btn">Clear</button>
-      </div>
-      
-      <div class="stats">
-        <h4>Connection Information</h4>
-        <div id="connectionInfo">Waiting for connection...</div>
-      </div>
+    <div class="messages" id="messages"></div>
+
+    <div class="controls">
+      <input type="text" id="messageInput" placeholder="Type a message..." />
+      <button id="sendButton" disabled>Send</button>
+    </div>
+
+    <div class="plugin-structure" id="pluginStructure">
+      <h4>Plugin Structure</h4>
+      <p>Waiting for plugin data from MCP server...</p>
     </div>
   </div>
 
@@ -367,216 +215,289 @@
     const messagesDiv = document.getElementById('messages');
     const inputEl = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
-    const clearButton = document.getElementById('clearButton');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const connectionStatus = document.getElementById('connectionStatus');
-    const protocolInfo = document.getElementById('protocolInfo');
-    const sentCount = document.getElementById('sentCount');
-    const receivedCount = document.getElementById('receivedCount');
-    const dataStats = document.getElementById('dataStats');
-    const debugSwitch = document.getElementById('debugSwitch');
-    const debugPanel = document.getElementById('debugPanel');
-    const debugInfo = document.getElementById('debugInfo');
-    const connectionInfo = document.getElementById('connectionInfo');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const pluginStructure = document.getElementById('pluginStructure');
 
-    let stats = { sent: 0, received: 0, bytesSent: 0, bytesReceived: 0, replies: 0 };
-    const pendingReplies = {};
-    const replyHandlers = {};  // 💡 reply "channels"
+    let currentPluginStructure = {
+        name: 'my-demo-plugin',
+        path: 'my-demo-plugin',
+        type: 'directory',
+        children: [
+          {
+            name: 'my-demo-plugin.php',
+            path: 'my-demo-plugin/my-demo-plugin.php',
+            type: 'file',
+            content: `<?php
+/**
+ * Plugin Name: My Demo Plugin
+ * Description: A basic demo plugin for learning purposes.
+ * Version: 1.0
+ * Author: Your Name
+ */
 
-    debugSwitch.addEventListener('change', () => {
-      debugPanel.style.display = debugSwitch.checked ? 'block' : 'none';
-    });
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-    function debugLog(message, data = null) {
-      const timestamp = new Date().toLocaleTimeString();
-      let log = `[${timestamp}] ${message}\n`;
-      if (data) log += JSON.stringify(data, null, 2) + '\n';
-      debugInfo.textContent = log + debugInfo.textContent;
+// Hook to admin menu
+add_action('admin_menu', 'my_demo_plugin_menu');
+
+function my_demo_plugin_menu() {
+    add_menu_page(
+        'My Demo Plugin',
+        'Demo Plugin',
+        'manage_options',
+        'my-demo-plugin',
+        'my_demo_plugin_page',
+        'dashicons-smiley',
+        20
+    );
+}
+
+function my_demo_plugin_page() {
+    ?>
+    <div class="wrap">
+        <h1>Welcome to My Demo Plugin</h1>
+        <p>This is a simple WordPress plugin example.</p>
+        <p>Last updated: <?php echo date('Y-m-d H:i:s'); ?></p>
+    </div>
+    <?php
+}
+`
+          }
+        ]
+      };
+
+    // Default plugin structure
+    function getDefaultPluginStructure() {
+      return {
+        name: 'my-demo-plugin',
+        path: 'my-demo-plugin',
+        type: 'directory',
+        children: [
+          {
+            name: 'my-demo-plugin.php',
+            path: 'my-demo-plugin/my-demo-plugin.php',
+            type: 'file',
+            content: `<?php
+/**
+ * Plugin Name: My Demo Plugin
+ * Description: A basic demo plugin for learning purposes.
+ * Version: 1.0
+ * Author: Your Name
+ */
+
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// Hook to admin menu
+add_action('admin_menu', 'my_demo_plugin_menu');
+
+function my_demo_plugin_menu() {
+    add_menu_page(
+        'My Demo Plugin',
+        'Demo Plugin',
+        'manage_options',
+        'my-demo-plugin',
+        'my_demo_plugin_page',
+        'dashicons-smiley',
+        20
+    );
+}
+
+function my_demo_plugin_page() {
+    ?>
+    <div class="wrap">
+        <h1>Welcome to My Demo Plugin</h1>
+        <p>This is a simple WordPress plugin example.</p>
+        <p>Last updated: <?php echo date('Y-m-d H:i:s'); ?></p>
+    </div>
+    <?php
+}
+`
+          }
+        ]
+      };
     }
 
+    // WebSocket connection
     const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     const socket = new WebSocket(wsScheme + window.location.host + '/ws/ac/');
-    window.socket = socket;
 
     socket.onopen = () => {
-      statusIndicator.classList.replace('disconnected', 'connected');
-      connectionStatus.textContent = 'Connected';
+      statusDot.className = 'status-dot connected';
+      statusText.textContent = 'Connected - Ready for MCP requests';
       sendButton.disabled = false;
-      appendMessage('Connected to server', 'system');
-      debugLog('WebSocket connection opened');
-      connectionInfo.innerHTML = `
-        <strong>URL:</strong> ${wsScheme + window.location.host + '/ws/ac/'}<br>
-        <strong>Protocol:</strong> ${socket.protocol || 'none'}<br>
-        <strong>Status:</strong> Connected
-      `;
-      updateStats();
+      
+      // Initialize with default plugin structure
+      currentPluginStructure = getDefaultPluginStructure();
+      displayPluginStructure(currentPluginStructure);
+      
+      appendMessage('🟢 Connected to server', 'system');
     };
 
     socket.onmessage = (e) => {
-      debugLog('Raw message received', e.data);
       try {
         const data = JSON.parse(e.data);
-        stats.received++;
-        stats.bytesReceived += e.data.length;
-        updateStats();
 
         if (data.type === 'greeting') {
-          appendMessage(`Server greeting: ${data.message}`, 'system');
+          appendMessage(`Server: ${data.message}`, 'system');
           return;
         }
 
-        if (data.command === 'send_data' && data.requires_reply) {
-          const messageId = data.message_id || 'unknown';
-          pendingReplies[messageId] = true;
+        // Handle folder read request from MCP server
+        if (data.command === 'read_folder_request' || data.type === 'folder_request') {
+          const messageId = data.message_id;
+          const path = data.path || '';
+          
+          appendMessage(`🔍 MCP requesting folder: ${path || 'root'}`, 'reply-request');
 
-          appendMessage(`Request from server (ID: ${messageId}): ${data.message}`, 'reply-request', data);
-          debugLog(`Reply request received with ID: ${messageId}`, data);
-
-          // 💬 Register reply handler
-          replyHandlers[messageId] = () => {
-            const reply = {
-              message: `Auto-reply to message ID: ${messageId}`,
-              message_id: messageId,
-              is_response: true,
-              client_info: {
-                timestamp: Date.now(),
-                browser: navigator.userAgent,
-                client_type: 'browser'
-              }
-            };
-            socket.send(JSON.stringify(reply));
-            stats.sent++;
-            stats.replies++;
-            stats.bytesSent += new Blob([JSON.stringify(reply)]).size;
-            appendMessage(`Sent reply for message ID: ${messageId}`, 'reply', reply);
-            updateStats();
-            delete pendingReplies[messageId];
+          // Send current plugin structure
+          const response = {
+            command: 'folder_response',
+            type: 'folder_response',
+            message_id: messageId,
+            path: path,
+            folder_structure: currentPluginStructure
           };
-
-          // ⏱ Auto-reply (can be changed to manual later)
+          
           setTimeout(() => {
-            if (replyHandlers[messageId]) {
-              replyHandlers[messageId]();
-              delete replyHandlers[messageId];
-            }
-          }, 500);
+            socket.send(JSON.stringify(response));
+            appendMessage(`✅ Sent folder structure`, 'reply');
+          }, 100);
+          return;
         }
-        else if (data.message) {
-          appendMessage(`Received: ${data.message}`, 'received', data);
+
+        // Handle folder update from MCP server
+        if (data.command === 'update_folder_request' || data.type === 'folder_update') {
+          const messageId = data.message_id;
+          const path = data.path || '';
+          const folderStructure = data.folder_structure;
+          
+          appendMessage(`📁 MCP updating folder: ${path || 'root'}`, 'reply-request');
+
+          // Update plugin structure
+          console.log('Updating plugin structure:', folderStructure);
+          currentPluginStructure = folderStructure;
+          console.log('Current plugin structure:', currentPluginStructure);
+          displayPluginStructure(currentPluginStructure);
+
+          // Send confirmation
+          const response = {
+            command: 'folder_updated',
+            type: 'folder_updated',
+            message_id: messageId,
+            status: 'success',
+            message: 'Folder updated successfully'
+          };
+          setTimeout(() => {
+            socket.send(JSON.stringify(response));
+            appendMessage(`✅ Folder updated successfully`, 'reply');
+          }, 100);
+          return;
+        }
+
+        // Handle regular messages
+        if (data.message) {
+          appendMessage(`Received: ${data.message}`, 'received');
         } else {
-          appendMessage(`Received: ${JSON.stringify(data)}`, 'received', data);
+          appendMessage(`Received: ${JSON.stringify(data)}`, 'received');
         }
+
       } catch (err) {
-        appendMessage('Received raw: ' + e.data, 'received');
-        debugLog('JSON parse error', { error: err.message, data: e.data });
-        stats.received++;
-        stats.bytesReceived += e.data.length;
-        updateStats();
+        appendMessage(`Raw: ${e.data}`, 'received');
       }
     };
 
-    socket.onclose = (event) => {
-      statusIndicator.classList.replace('connected', 'disconnected');
-      connectionStatus.textContent = 'Disconnected';
+    socket.onclose = () => {
+      statusDot.className = 'status-dot disconnected';
+      statusText.textContent = 'Disconnected';
       sendButton.disabled = true;
-
-      const reasons = {
-        1001: 'Endpoint going away', 1002: 'Protocol error', 1003: 'Unsupported data',
-        1006: 'Abnormal closure', 1007: 'Invalid payload', 1008: 'Policy violation',
-        1009: 'Message too big', 1010: 'Missing extension', 1011: 'Internal error',
-        1012: 'Service restart', 1013: 'Try again later', 1015: 'TLS failure'
-      };
-      const reason = reasons[event.code] || `Unknown (${event.code})`;
-      appendMessage(`Disconnected: ${reason}`, 'system');
-      debugLog('Disconnected', { code: event.code, reason });
-      
-      connectionInfo.innerHTML = `
-        <strong>Status:</strong> Disconnected<br>
-        <strong>Reason:</strong> ${reason}<br>
-        <strong>Reconnecting in 3 seconds...</strong>
-      `;
-
-      // Reconnect after delay
-      setTimeout(() => location.reload(), 3000);
+      appendMessage('🔴 Disconnected from server', 'system');
     };
 
     socket.onerror = (err) => {
-      appendMessage('WebSocket error: ' + (err.message || 'Unknown'), 'system');
-      debugLog('WebSocket error', err);
+      appendMessage('❌ WebSocket error', 'system');
     };
 
+    // Send button
     sendButton.onclick = () => {
       const msg = inputEl.value.trim();
       if (!msg) return;
+      
       const payload = {
         message: msg,
-        type: 'manual',
-        timestamp: Date.now(),
-        is_response: false
+        timestamp: Date.now()
       };
-      sendMessage(payload);
+      
+      socket.send(JSON.stringify(payload));
+      appendMessage(`Sent: ${msg}`, 'sent');
       inputEl.value = '';
     };
 
+    // Enter key to send
     inputEl.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter' && !sendButton.disabled) sendButton.click();
+      if (e.key === 'Enter' && !sendButton.disabled) {
+        sendButton.click();
+      }
     });
 
-    clearButton.onclick = () => {
-      messagesDiv.innerHTML = '';
-      appendMessage('Messages cleared', 'system');
-      debugLog('Display cleared');
-    };
-
-    function sendMessage(payload) {
-      const jsonData = JSON.stringify(payload);
-      socket.send(jsonData);
-      debugLog('Sending message', payload);
-      stats.sent++;
-      stats.bytesSent += new Blob([jsonData]).size;
-      appendMessage(payload.message, 'sent', payload);
-      updateStats();
+    // Display plugin structure
+    function displayPluginStructure(structure) {
+      if (!structure) return;
+      
+      let html = `<h4>Plugin: ${structure.name}</h4>`;
+      
+      if (structure.children) {
+        structure.children.forEach(child => {
+          if (child.type === 'file') {
+            html += `
+              <div class="file-item" onclick="toggleFileContent('${child.name}')">
+                📄 ${child.name}
+              </div>
+              <div class="file-content" id="content-${child.name}">${child.content || ''}</div>
+            `;
+          }
+        });
+      }
+      
+      pluginStructure.innerHTML = html;
     }
 
-    function appendMessage(text, type, data = null) {
+    // Toggle file content visibility
+    function toggleFileContent(fileName) {
+      const content = document.getElementById(`content-${fileName}`);
+      if (content) {
+        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    // Add message to chat
+    function appendMessage(text, type) {
       const div = document.createElement('div');
       div.className = `message ${type}`;
+      
       const content = document.createElement('div');
       content.textContent = text;
       div.appendChild(content);
-
-      const ts = document.createElement('div');
-      ts.className = 'timestamp';
-      ts.textContent = new Date().toLocaleTimeString();
-      div.appendChild(ts);
-
-      if (data && type !== 'system') {
-        const ds = document.createElement('div');
-        ds.className = 'data-size';
-        ds.textContent = `Size: ${formatBytes(JSON.stringify(data).length)}`;
-        div.appendChild(ds);
-      }
-
+      
+      const timestamp = document.createElement('div');
+      timestamp.className = 'timestamp';
+      timestamp.textContent = new Date().toLocaleTimeString();
+      div.appendChild(timestamp);
+      
       messagesDiv.appendChild(div);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    function updateStats() {
-      sentCount.textContent = `Sent: ${stats.sent}`;
-      receivedCount.textContent = `Received: ${stats.received}`;
-      const replyInfo = stats.replies ? ` | Replies: ${stats.replies}` : '';
-      dataStats.textContent = `Data sent: ${formatBytes(stats.bytesSent)} | Data received: ${formatBytes(stats.bytesReceived)}${replyInfo}`;
-    }
-
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 B';
-      const sizes = ['B', 'KB', 'MB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
-    }
-
-    statusIndicator.classList.add('disconnected');
-    debugLog('WebSocket client initialized');
+    // Initialize
+    statusDot.className = 'status-dot disconnected';
+    currentPluginStructure = getDefaultPluginStructure();
+    displayPluginStructure(currentPluginStructure);
   </script>
 </body>
 </html>

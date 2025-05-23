@@ -32,44 +32,37 @@ def debug_print(*args, **kwargs):
 
 
 PROMPT_TEMPLATE = """
-You are an intelligent expense tracker and database assistant.
+You are an intelligent assistant.
+your job is to understand the user's query and invoke the appropriate tool function using structured tool calls.
 
-Your job is to understand the user's query and invoke the appropriate database tool function using structured tool calls.
-
-You have access to the following tools:
-
-1. `insert_user(name: str, email: str)`  
-   → Use this when the user wants to create a new user account or registers with a name and email.
-
-2. `insert_category_table(use_id: str, table_category: str, table: dict)`  
-   → Use this when the user shares a structured table (with rows, columns, notes) for a specific category, like transport, food, or health logs.
-
-Instructions:
-- Always extract structured data (user ID, category, table, name, email, etc.) from the query.
-- Use tool calls only when you have enough information.
-- If information is missing, ask for clarification.
-- Do not reply with natural sentences unless clarification is needed.
-- Format your response as a JSON tool invocation if possible.
-
-Example 1 (new user):
-User: "create user named Mehedi with email mehedi@gmail.com"
-→ Tool: `insert_user(name="Mehedi", email="mehedi@gmail.com")`
-
-Example 2 (structured category table):
-User: "insert this into table for user 1, category transport: columns [Date, Amount, Vendor], rows [...], note: transport logs"
-→ Tool: `insert_category_table(use_id="1", table_category="transport", table={...})`
 """
 load_dotenv()
 
 class ExpenseMCPClient:
 
     def __init__(self, anthropic_api_key=None):
-        self.anthropic_api_key = anthropic_api_key or getattr(
-            settings, "ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY")
-        )
-        print(self.anthropic_api_key)
-        if not self.anthropic_api_key:
-            raise ValueError("Anthropic API key is required.")
+        # Add debug prints
+        print("\n🔑 API Key Debug:")
+        print("1. Checking API key sources...")
+        
+        # Try to get API key from different sources
+        direct_key = anthropic_api_key
+        settings_key = getattr(settings, "ANTHROPIC_API_KEY", None)
+        env_key = os.getenv("ANTHROPIC_API_KEY")
+        
+        print(f"Direct key present: {'Yes' if direct_key else 'No'}")
+        print(f"Settings key present: {'Yes' if settings_key else 'No'}")
+        print(f"Env key present: {'Yes' if env_key else 'No'}")
+        
+        self.anthropic_api_key = direct_key or settings_key or env_key
+        
+        if self.anthropic_api_key:
+            print(f"API Key format check:")
+            print(f"- Starts with 'sk-': {self.anthropic_api_key.startswith('sk-')}")
+            print(f"- Length: {len(self.anthropic_api_key)}")
+            print(f"- First 8 chars: {self.anthropic_api_key[:8]}")
+        else:
+            print("❌ No API key found in any source!")
         self.exit_stack = None
         self.client = None
         self.agent = None
